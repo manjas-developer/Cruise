@@ -253,7 +253,7 @@ def start_interactive_repl():
             user_code = input("cruise> ").strip()
             
             if user_code.lower() in ["exit", "quit"]:
-                print("Exiting Cruise REPL. Goodbye Manjas! 👋")
+                print("Exiting Cruise REPL. Goodbye! 👋")
                 break
                 
             if user_code:
@@ -273,16 +273,25 @@ def start_interactive_repl():
             print(f"Cruise Runtime Error: {e}")
 
 def main():
+    # Handles executing files passed via terminal (e.g. cruise script.cru or cruise script.cruise)
     if len(sys.argv) > 1:
         filename = sys.argv[1]
+        
+        if not os.path.exists(filename):
+            print(f"Cruise File System Error: File '{filename}' not found.")
+            return
+
         try:
             with open(filename, "r", encoding="utf-8") as file:
-                run_program(file.read())
+                program_code = file.read()
+                print(f"🚢 Executing Cruise script: {filename}\n")
+                run_program(program_code)
+                
                 if root is not None:
                     print("\n[Cruise UI Window Running]: Visual app activated.")
                     root.mainloop()
-        except FileNotFoundError:
-            print(f"Cruise File System Error: '{filename}' not found.")
+        except Exception as e:
+            print(f"Cruise Execution Error: {e}")
     else:
         start_interactive_repl()
 
