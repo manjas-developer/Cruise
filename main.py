@@ -6,21 +6,20 @@ import torch  # Powered by PyTorch for Tensors, Autograd, and GPU access
 from sklearn.linear_model import LinearRegression
 import numpy as np
 
-# --- 1. Global Setup for the Cruise Language ---
+# --- 1. Global Setup for the Cruise Language --- 🛠️
 variables = {}
 memory_log = []  
 ml_models = {}   
 root = None      # Holds the Tkinter window object if UI features are used
 
-# Pre-train a simple background ML model for "house_prices"
+# Pre-train a simple background ML model for "house_prices" 🏠
 X_train = np.array([[1], [2], [3], [4]])
 y_train = np.array([100, 200, 300, 400])
 house_model = LinearRegression()
 house_model.fit(X_train, y_train)
 ml_models["house_prices"] = house_model
 
-
-# --- 2. The Core Cruise Interpreter Engine ---
+# --- 2. The Core Cruise Interpreter Engine --- ⚙️
 def run_line(line):
     global root
     line = line.strip()
@@ -29,12 +28,12 @@ def run_line(line):
     if not line or line.startswith("#"):
         return
 
-    # A. Audio Alert: beep()
+    # A. Audio Alert: beep() 🔔
     if line == "beep()":
         print("\a", end="", flush=True) 
         return
 
-    # B. Window Background Color: background("color")
+    # B. Window Background Color: background("color") 🎨
     if line.startswith("background"):
         match = re.match(r'background\(\s*"(.*?)"\s*\)', line)
         if match:
@@ -44,9 +43,10 @@ def run_line(line):
                 root.title("Cruise App")
                 root.geometry("400x400")
             root.configure(bg=color)
+            root.update()
         return
 
-    # C. Automation Loops: [number] times [command]
+    # C. Automation Loops: [number] times [command] 🔄
     if " times " in line:
         match = re.match(r"(\d+)\s+times\s+(.+)", line)
         if match:
@@ -56,7 +56,7 @@ def run_line(line):
                 run_line(command_to_run)
         return
 
-    # D. Long-term Memory: remember(variable)
+    # D. Long-term Memory: remember(variable) 🧠
     if line.startswith("remember"):
         match = re.search(r'remember\(\s*(\w+)\s*\)', line)
         if match:
@@ -68,7 +68,7 @@ def run_line(line):
                 print(f"Cruise Error: Cannot remember '{var_name}', variable does not exist.")
         return
 
-    # E. File Logging Forms: log("path", variable)
+    # E. File Logging Forms: log("path", variable) 📁
     if line.startswith("log"):
         match = re.match(r'log\(\s*"(.*?)"\s*,\s*(.*?)\s*\)', line)
         if match:
@@ -84,7 +84,7 @@ def run_line(line):
                 print(f"Cruise File Error: Could not write to file. {e}")
         return
 
-    # F. UI Interactive Buttons: button("Label", action, "optional_color")
+    # F. UI Interactive Buttons: button("Label", action, "optional_color") 🔘
     if line.startswith("button"):
         if root is None:
             root = tk.Tk()
@@ -102,9 +102,10 @@ def run_line(line):
 
             tk_button = tk.Button(root, text=button_text, command=on_click, bg=btn_color, activebackground=btn_color)
             tk_button.pack(pady=10)
+            root.update()
         return
 
-    # G. Tensor Core Array Support: let [name] be array([...])
+    # G. Tensor Core Array Support: let [name] be array([...]) 📊
     if line.startswith("let ") and "array(" in line:
         match = re.match(r"let\s+(\w+)\s+be\s+array\((.+)\)", line)
         if match:
@@ -114,7 +115,7 @@ def run_line(line):
             print(f"[Cruise Array]: Created tensor '{var_name}' with Autograd tracking.")
         return
 
-    # H. GPU Access Accelerator Binding: let [name] be moved to gpu
+    # H. GPU Access Accelerator Binding: let [name] be moved to gpu ⚡
     if "moved to gpu" in line:
         match = re.match(r"let\s+(\w+)\s+be\s+moved to gpu", line)
         if match:
@@ -129,7 +130,7 @@ def run_line(line):
                 print(f"Cruise Error: Variable '{var_name}' not found.")
         return
 
-    # I. Autograd Gradient Solver: compute_gradients([tensor])
+    # I. Autograd Gradient Solver: compute_gradients([tensor]) 📐
     if line.startswith("compute_gradients"):
         match = re.match(r"compute_gradients\((.+)\)", line)
         if match:
@@ -141,7 +142,7 @@ def run_line(line):
                 print(f"Cruise Error: Variable '{var_name}' not found.")
         return
 
-    # J. Display Mathematical Gradients: write_gradient([tensor])
+    # J. Display Mathematical Gradients: write_gradient([tensor]) ✍️
     if line.startswith("write_gradient"):
         match = re.match(r"write_gradient\((.+)\)", line)
         if match:
@@ -152,25 +153,25 @@ def run_line(line):
                 print(f"Cruise Error: No gradients discovered for '{var_name}'. Did you trigger compute_gradients()?")
         return
 
-    # K. Core Variable Engine, Basic Math, & ML Predictions
+    # K. Core Variable Engine, Basic Math, & ML Predictions 🔮
     if line.startswith("let "):
         match = re.match(r"let\s+(\w+)\s+be\s+(.+)", line)
         if match:
             var_name = match.group(1)
             var_value_raw = match.group(2).strip()
             
-            # Interactive Console Inputs
+            # Interactive Console Inputs 💬
             if var_value_raw.startswith("ask"):
                 prompt_match = re.search(r'ask\(\s*"(.*?)"\s*\)', var_value_raw)
                 if prompt_match:
-                    user_input = input(prompt_match.group(1))
+                    user_input = input(prompt_match.group(1) + " ")
                     try:
                         variables[var_name] = float(user_input) if '.' in user_input else int(user_input)
                     except ValueError:
                         variables[var_name] = user_input
                 return
 
-            # Native Machine Learning Predictor
+            # Native Machine Learning Predictor 🤖
             if var_value_raw.startswith("predict"):
                 ml_match = re.search(r'predict\(\s*"(.*?)"\s*,\s*(.*?)\s*\)', var_value_raw)
                 if ml_match:
@@ -185,7 +186,7 @@ def run_line(line):
                         print(f"Cruise ML Error: Model '{model_name}' unrecognized.")
                 return
             
-            # Normal assignments and matrix/tensor math calculations
+            # Normal assignments and matrix/tensor math calculations 🧮
             try:
                 local_env = {**globals(), **variables}
                 variables[var_name] = eval(var_value_raw, local_env)
@@ -196,7 +197,7 @@ def run_line(line):
                     print(f"Cruise Error: Could not assign value to '{var_name}'")
         return
 
-    # L. Logical Conditions: if [condition] then [command]
+    # L. Logical Conditions: if [condition] then [command] 🔀
     if line.startswith("if "):
         match = re.match(r"if\s+(.+)\s+then\s+(.+)", line)
         if match:
@@ -215,52 +216,75 @@ def run_line(line):
                 print("Cruise Syntax Error: Conditional expression evaluation failed.")
         return
 
-    # M. Native Standard Output: write(...)
+    # M. Native Standard Output: write(...) 📜
     if line.startswith("write"):
-        content = re.search(r'\((.*?)\)', line).group(1).strip()
-        if content in variables:
-            print(variables[content])
-        elif content == "memory":
-            print(f"Cruise Memory Timeline: {memory_log}")
-        else:
-            try:
-                local_env = {**globals(), **variables}
-                print(eval(content, local_env))
-            except:
-                print("Cruise Syntax Error inside write()")
+        match = re.search(r'\((.*?)\)', line)
+        if match:
+            content = match.group(1).strip()
+            if content in variables:
+                print(variables[content])
+            elif content == "memory":
+                print(f"Cruise Memory Timeline: {memory_log}")
+            else:
+                try:
+                    local_env = {**globals(), **variables}
+                    print(eval(content, local_env))
+                except:
+                    print("Cruise Syntax Error inside write()")
         return
 
     print(f"Cruise Syntax Error: Command '{line}' unrecognized.")
-
 
 def run_program(program_code):
     lines = program_code.split('\n')
     for line in lines:
         run_line(line)
-    if root is not None:
-        print("\n[Cruise UI Window Running]: Visual app activated.")
-        root.mainloop()
 
+# --- 3. Interactive REPL Terminal --- 🖥️
+def start_interactive_repl():
+    global root
+    print("==================================================")
+    print("🚀 Welcome to the Cruise Language REPL! 🚀")
+    print("Type your Cruise code below. Type 'exit' or 'quit' to end.")
+    print("==================================================\n")
+    
+    while True:
+        try:
+            user_code = input("cruise> ").strip()
+            
+            if user_code.lower() in ["exit", "quit"]:
+                print("Exiting Cruise REPL. Goodbye Manjas! 👋")
+                break
+                
+            if user_code:
+                run_line(user_code)
+                
+            # Keep Tkinter UI alive and responsive if window opened 🪟
+            if root is not None:
+                try:
+                    root.update()
+                except tk.TclError:
+                    root = None  # Window was closed by user
+                    
+        except KeyboardInterrupt:
+            print("\nExiting Cruise REPL. Goodbye! 👋")
+            break
+        except Exception as e:
+            print(f"Cruise Runtime Error: {e}")
 
-# --- 3. Terminal Execution Manager ---
-if __name__ == "__main__":
+def main():
     if len(sys.argv) > 1:
         filename = sys.argv[1]
         try:
             with open(filename, "r", encoding="utf-8") as file:
                 run_program(file.read())
+                if root is not None:
+                    print("\n[Cruise UI Window Running]: Visual app activated.")
+                    root.mainloop()
         except FileNotFoundError:
             print(f"Cruise File System Error: '{filename}' not found.")
     else:
-        print("--- Running Cruise AI/Deep-Learning Test Script ---")
-        demo_script = """
-        let x be array([1.0, 3.0, 5.0])
-        let y be x * x + 10
-        let y be moved to gpu
-        write("Matrix processing values (x^2 + 10):")
-        write(y)
-        compute_gradients(y)
-        write("Calculated calculus weights via Cruise Autograd:")
-        write_gradient(x)
-        """
-        run_program(demo_script)
+        start_interactive_repl()
+
+if __name__ == "__main__":
+    main()
