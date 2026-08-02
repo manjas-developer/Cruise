@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cruise-lang"
+version = "0.1.0"
+description = "Cruise Language Interpreter"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "torch",
+    "scikit-learn",
+    "numpy"
+]
+
+[project.scripts]
+cruise = "cruise.main:main"
