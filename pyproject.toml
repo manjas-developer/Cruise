@@ -5,7 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cruise-lang"
 version = "0.1.0"
-description = "Cruise Language Interpreter"
+authors = [
+  { name = "Manjas Anand" }
+]
+description = "Cruise: An AI-powered, tensor-ready lightweight programming language interpreter."
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
@@ -13,6 +16,14 @@ dependencies = [
     "scikit-learn",
     "numpy"
 ]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
 
 [project.scripts]
-cruise = "cruise.main:main"
+cruise = "main:main"
+
+[tool.setuptools]
+py-modules = ["main"]
