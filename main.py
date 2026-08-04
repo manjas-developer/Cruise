@@ -2,7 +2,7 @@
 =============================================================================
 CRUISE PROGRAMMING LANGUAGE INTERPRETER (`cruise-lang`)
 Author: Manjas Anand
-Version: 0.3.5
+Version: 0.2.0
 License: MIT
 Description: High-performance, lightweight tensor calculus, machine learning,
              and UI execution engine built for multi-platform execution.
@@ -155,7 +155,7 @@ class CruiseLexer:
         tokens.append(Token(TokenType.EOF, "", self.line))
         return tokens
 
-    def _peek((self) -> str:
+    def _peek(self) -> str:
         if self.position + 1 < len(self.source):
             return self.source[self.position + 1]
         return ""
@@ -219,7 +219,7 @@ class CruiseInterpreter:
         self.global_env = Environment()
         self.functions: Dict[str, Dict[str, Any]] = {}
         self.gui_root = None
-        self.version = "0.3.5"
+        self.version = "0.2.0"
         self.creator = "Manjas Anand"
 
     def print_welcome_banner(self):
@@ -289,7 +289,7 @@ class CruiseInterpreter:
                 
                 if HAS_URLLIB:
                     try:
-                        req = urllib.request.Request(url, headers={'User-Agent': 'Cruise-Lang/0.3.5'})
+                        req = urllib.request.Request(url, headers={'User-Agent': 'Cruise-Lang/0.2.0'})
                         with urllib.request.urlopen(req) as response:
                             res_data = response.read().decode('utf-8')
                             if var_name:
