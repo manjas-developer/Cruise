@@ -15,7 +15,7 @@ jobs:
     name: Upload package to PyPI
     runs-on: ubuntu-latest
     permissions:
-      id-token: write   # Required for PyPI Trusted Publishing (OIDC)
+      id-token: write   # Required for PyPI Trusted Publishing
       contents: read
 
     steps:
@@ -30,12 +30,12 @@ jobs:
       - name: Install build tools
         run: |
           python -m pip install --upgrade pip
-          pip install build twine
+          pip install build
 
-      - name: Build Cruise v0.2.0 Package
+      - name: Build Cruise Package
         run: python -m build
 
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@v1.12.3
         with:
-          skip-existing: true  # Prevents crash if version v0.2.0 was already uploaded
+          skip-existing: true
