@@ -1,299 +1,224 @@
-import re
 import sys
 import os
-import tkinter as tk
-import torch  # Powered by PyTorch for Tensors, Autograd, and GPU access
-from sklearn.linear_model import LinearRegression
-import numpy as np
+import math
+import time
+import json
 
-# --- 1. Global Setup for the Cruise Language --- 🛠️
-variables = {}
-memory_log = []  
-ml_models = {}   
-root = None      # Holds the Tkinter window object if UI features are used
+# 1. HTTP Capabilities
+try:
+    import urllib.request
+    import urllib.parse
+    HAS_URLLIB = True
+except ImportError:
+    HAS_URLLIB = False
 
-# Pre-train a simple background ML model for "house_prices" 🏠
-X_train = np.array([[1], [2], [3], [4]])
-y_train = np.array([100, 200, 300, 400])
-house_model = LinearRegression()
-house_model.fit(X_train, y_train)
-ml_models["house_prices"] = house_model
+# 2. GUI Driver Handling
+HAS_TKINTER = False
+try:
+    if os.environ.get('DISPLAY') or os.name == 'nt' or sys.platform == 'darwin':
+        import tkinter as tk
+        HAS_TKINTER = True
+except Exception:
+    HAS_TKINTER = False
 
-# --- 2. The Core Cruise Interpreter Engine --- ⚙️
-def run_line(line):
-    global root
-    line = line.strip()
-    
-    # Ignore empty lines or comments
-    if not line or line.startswith("#"):
-        return
 
-    # A. Audio Alert: beep() 🔔
-    if line == "beep()":
-        print("\a", end="", flush=True) 
-        return
+class CruiseTensor:
+    """Lightweight Tensor Engine for AI/ML Operations."""
+    def __init__(self, data):
+        if isinstance(data, (int, float)):
+            self.data = [float(data)]
+            self.shape = (1,)
+        elif isinstance(data, list):
+            self.data = data
+            self.shape = (len(data),)
+        else:
+            raise TypeError("Unsupported data type for CruiseTensor")
 
-    # B. Window Background Color: background("color") 🎨
-    if line.startswith("background"):
-        match = re.match(r'background\(\s*"(.*?)"\s*\)', line)
-        if match:
-            color = match.group(1)
-            if root is None:
-                root = tk.Tk()
-                root.title("Cruise App")
-                root.geometry("400x400")
-            root.configure(bg=color)
-            root.update()
-        return
+    def add(self, other):
+        if isinstance(other, CruiseTensor):
+            return CruiseTensor([a + b for a, b in zip(self.data, other.data)])
+        return CruiseTensor([a + other for a in self.data])
 
-    # C. Automation Loops: [number] times [command] 🔄
-    if " times " in line:
-        match = re.match(r"(\d+)\s+times\s+(.+)", line)
-        if match:
-            iterations = int(match.group(1))
-            command_to_run = match.group(2).strip()
-            for _ in range(iterations):
-                run_line(command_to_run)
-        return
+    def multiply(self, other):
+        if isinstance(other, CruiseTensor):
+            return CruiseTensor([a * b for a, b in zip(self.data, other.data)])
+        return CruiseTensor([a * other for a in self.data])
 
-    # D. Long-term Memory: remember(variable) 🧠
-    if line.startswith("remember"):
-        match = re.search(r'remember\(\s*(\w+)\s*\)', line)
-        if match:
-            var_name = match.group(1)
-            if var_name in variables:
-                memory_log.append(variables[var_name])
-                print(f"[Cruise Memory]: Logged value of '{var_name}' -> ({variables[var_name]})")
-            else:
-                print(f"Cruise Error: Cannot remember '{var_name}', variable does not exist.")
-        return
+    def __repr__(self):
+        return f"CruiseTensor(data={self.data}, shape={self.shape})"
 
-    # E. File Logging Forms: log("path", variable) 📁
-    if line.startswith("log"):
-        match = re.match(r'log\(\s*"(.*?)"\s*,\s*(.*?)\s*\)', line)
-        if match:
-            file_path = match.group(1)
-            var_name = match.group(2).strip()
-            
-            data_to_save = str(variables[var_name]) if var_name in variables else var_name.strip('"')
-            try:
-                with open(file_path, "a", encoding="utf-8") as f:
-                    f.write(data_to_save + "\n")
-                print(f"[Cruise File Logged]: Saved '{data_to_save}' to '{file_path}'")
-            except Exception as e:
-                print(f"Cruise File Error: Could not write to file. {e}")
-        return
 
-    # F. UI Interactive Buttons: button("Label", action, "optional_color") 🔘
-    if line.startswith("button"):
-        if root is None:
-            root = tk.Tk()
-            root.title("Cruise App")
-            root.geometry("400x400")
+class CruiseInterpreter:
+    def __init__(self):
+        self.variables = {}
+        self.functions = {}
+        self.gui_root = None
+        self.version = "0.3.0"
+        self.creator = "Manjas Anand"
 
-        match = re.match(r'button\(\s*"(.*?)"\s*,\s*([^,)]+)(?:\s*,\s*"(.*?)")?\s*\)', line)
-        if match:
-            button_text = match.group(1)
-            action_command = match.group(2).strip()
-            btn_color = match.group(3) if match.group(3) else "lightgray"
+    def print_welcome_banner(self):
+        """Displays startup personalized REPL banner."""
+        print("=" * 65)
+        print(f"  🚢 CRUISE LANGUAGE REPL v{self.version}")
+        print(f"  👨‍💻 Designed & Developed by {self.creator}")
+        print("  ⚡ Type 'exit' or 'quit' to close the shell")
+        print("=" * 65)
 
-            def on_click():
-                run_line(action_command)
+    def print_exit_banner(self):
+        """Displays exit personalized REPL banner."""
+        print("\n" + "=" * 65)
+        print(f"  👋 Thank you for using Cruise Language by {self.creator}!")
+        print("  🚀 Keep building amazing AI models and apps. See you soon!")
+        print("=" * 65)
 
-            tk_button = tk.Button(root, text=button_text, command=on_click, bg=btn_color, activebackground=btn_color)
-            tk_button.pack(pady=10)
-            root.update()
-        return
+    def execute_script(self, code_text):
+        """Parse and run Cruise source scripts."""
+        lines = [line.strip() for line in code_text.splitlines() if line.strip() and not line.strip().startswith("#")]
+        self._run_lines(lines)
 
-    # G. Tensor Core Array Support: let [name] be array([...]) 📊
-    if line.startswith("let ") and "array(" in line:
-        match = re.match(r"let\s+(\w+)\s+be\s+array\((.+)\)", line)
-        if match:
-            var_name = match.group(1)
-            array_data = eval(match.group(2))
-            variables[var_name] = torch.tensor(array_data, dtype=torch.float32, requires_grad=True)
-            print(f"[Cruise Array]: Created tensor '{var_name}' with Autograd tracking.")
-        return
+    def _run_lines(self, lines):
+        i = 0
+        while i < len(lines):
+            line = lines[i]
 
-    # H. GPU Access Accelerator Binding: let [name] be moved to gpu ⚡
-    if "moved to gpu" in line:
-        match = re.match(r"let\s+(\w+)\s+be\s+moved to gpu", line)
-        if match:
-            var_name = match.group(1)
-            if var_name in variables:
-                if torch.cuda.is_available():
-                    variables[var_name] = variables[var_name].to("cuda")
-                    print(f"[Cruise GPU]: Accelerated '{var_name}' by moving to GPU (CUDA).")
-                else:
-                    print("[Cruise GPU Warning]: GPU hardware not found. Cruising smoothly on CPU instead.")
-            else:
-                print(f"Cruise Error: Variable '{var_name}' not found.")
-        return
+            # --- 1. Function Definitions ("define func(a, b): ... end") ---
+            if line.startswith("define "):
+                func_header = line[7:].rstrip(":")
+                func_name, args_part = func_header.split("(")
+                func_name = func_name.strip()
+                arg_names = [a.strip() for a in args_part.rstrip(")").split(",") if a.strip()]
 
-    # I. Autograd Gradient Solver: compute_gradients([tensor]) 📐
-    if line.startswith("compute_gradients"):
-        match = re.match(r"compute_gradients\((.+)\)", line)
-        if match:
-            var_name = match.group(1).strip()
-            if var_name in variables:
-                variables[var_name].backward(torch.ones_like(variables[var_name]))
-                print(f"[Cruise Autograd]: Backward pass completed for '{var_name}'. Derivatives calculated!")
-            else:
-                print(f"Cruise Error: Variable '{var_name}' not found.")
-        return
+                body_lines = []
+                i += 1
+                while i < len(lines) and lines[i] != "end":
+                    body_lines.append(lines[i])
+                    i += 1
 
-    # J. Display Mathematical Gradients: write_gradient([tensor]) ✍️
-    if line.startswith("write_gradient"):
-        match = re.match(r"write_gradient\((.+)\)", line)
-        if match:
-            var_name = match.group(1).strip()
-            if var_name in variables and variables[var_name].grad is not None:
-                print(f"Gradient of {var_name}: {variables[var_name].grad}")
-            else:
-                print(f"Cruise Error: No gradients discovered for '{var_name}'. Did you trigger compute_gradients()?")
-        return
+                self.functions[func_name] = {
+                    "args": arg_names,
+                    "body": body_lines
+                }
 
-    # K. Core Variable Engine, Basic Math, & ML Predictions 🔮
-    if line.startswith("let "):
-        match = re.match(r"let\s+(\w+)\s+be\s+(.+)", line)
-        if match:
-            var_name = match.group(1)
-            var_value_raw = match.group(2).strip()
-            
-            # Interactive Console Inputs 💬
-            if var_value_raw.startswith("ask"):
-                prompt_match = re.search(r'ask\(\s*"(.*?)"\s*\)', var_value_raw)
-                if prompt_match:
-                    user_input = input(prompt_match.group(1) + " ")
+            # --- 2. Custom Function Call ---
+            elif "(" in line and line.endswith(")") and not any(line.startswith(kw) for kw in ["write", "fetch", "post", "background", "button", "tensor"]):
+                func_name, args_part = line.rstrip(")").split("(", 1)
+                func_name = func_name.strip()
+
+                if func_name in self.functions:
+                    raw_args = [a.strip() for a in args_part.split(",") if a.strip()]
+                    func_data = self.functions[func_name]
+
+                    local_env = {}
+                    for param, val in zip(func_data["args"], raw_args):
+                        local_env[param] = eval(val, {}, self.variables)
+
+                    saved_vars = self.variables.copy()
+                    self.variables.update(local_env)
+                    self._run_lines(func_data["body"])
+                    self.variables = saved_vars
+
+            # --- 3. HTTP Request Support ---
+            elif "fetch(" in line:
+                var_name, url_part = line.split("=", 1) if "=" in line else (None, line)
+                url = url_part.split("fetch(")[1].rstrip(")").strip("'\"")
+                
+                if HAS_URLLIB:
                     try:
-                        variables[var_name] = float(user_input) if '.' in user_input else int(user_input)
-                    except ValueError:
-                        variables[var_name] = user_input
-                return
+                        req = urllib.request.urlopen(url)
+                        res_data = req.read().decode('utf-8')
+                        if var_name:
+                            self.variables[var_name.strip()] = res_data
+                        else:
+                            print(res_data)
+                    except Exception as e:
+                        print(f"⚠️ Cruise HTTP Error: {e}")
 
-            # Native Machine Learning Predictor 🤖
-            if var_value_raw.startswith("predict"):
-                ml_match = re.search(r'predict\(\s*"(.*?)"\s*,\s*(.*?)\s*\)', var_value_raw)
-                if ml_match:
-                    model_name = ml_match.group(1)
-                    input_val_raw = ml_match.group(2)
-                    input_val = float(variables[input_val_raw]) if input_val_raw in variables else float(input_val_raw)
-                    
-                    if model_name in ml_models:
-                        prediction = ml_models[model_name].predict([[input_val]])[0]
-                        variables[var_name] = round(prediction, 2)
-                    else:
-                        print(f"Cruise ML Error: Model '{model_name}' unrecognized.")
-                return
-            
-            # Normal assignments and matrix/tensor math calculations 🧮
-            try:
-                local_env = {**globals(), **variables}
-                variables[var_name] = eval(var_value_raw, local_env)
-            except:
-                if var_value_raw.startswith('"') and var_value_raw.endswith('"'):
-                    variables[var_name] = var_value_raw.strip('"')
+            # --- 4. Tensor Creation ("t = tensor([1, 2, 3])") ---
+            elif "tensor(" in line:
+                var_name, tensor_part = line.split("=", 1)
+                raw_list = tensor_part.split("tensor(")[1].rstrip(")")
+                parsed_list = eval(raw_list)
+                self.variables[var_name.strip()] = CruiseTensor(parsed_list)
+
+            # --- 5. GUI Builder ---
+            elif line.startswith("background("):
+                color = line.split("background(")[1].rstrip(")").strip("'\"")
+                if HAS_TKINTER:
+                    if not self.gui_root:
+                        self.gui_root = tk.Tk()
+                        self.gui_root.title(f"Cruise GUI App — Developed by {self.creator}")
+                        self.gui_root.geometry("400x300")
+                    self.gui_root.configure(bg=color)
                 else:
-                    print(f"Cruise Error: Could not assign value to '{var_name}'")
-        return
+                    print(f"🎨 [GUI Headless Mode]: Background set to '{color}'")
 
-    # L. Logical Conditions: if [condition] then [command] 🔀
-    if line.startswith("if "):
-        match = re.match(r"if\s+(.+)\s+then\s+(.+)", line)
-        if match:
-            condition_raw = match.group(1).strip()
-            action_command = match.group(2).strip()
-            
-            for name, val in variables.items():
-                if isinstance(val, (int, float)):
-                    condition_raw = re.sub(rf'\b{name}\b', str(val), condition_raw)
-                elif isinstance(val, str):
-                    condition_raw = re.sub(rf'\b{name}\b', f'"{val}"', condition_raw)
-            try:
-                if eval(condition_raw):
-                    run_line(action_command)
-            except:
-                print("Cruise Syntax Error: Conditional expression evaluation failed.")
-        return
+            elif line.startswith("button("):
+                btn_text = line.split("button(")[1].rstrip(")").strip("'\"")
+                if HAS_TKINTER and self.gui_root:
+                    btn = tk.Button(self.gui_root, text=btn_text)
+                    btn.pack(pady=10)
+                else:
+                    print(f"🔘 [GUI Headless Mode]: Button '{btn_text}' rendered")
 
-    # M. Native Standard Output: write(...) 📜
-    if line.startswith("write"):
-        match = re.search(r'\((.*?)\)', line)
-        if match:
-            content = match.group(1).strip()
-            if content in variables:
-                print(variables[content])
-            elif content == "memory":
-                print(f"Cruise Memory Timeline: {memory_log}")
-            else:
-                try:
-                    local_env = {**globals(), **variables}
-                    print(eval(content, local_env))
-                except:
-                    print("Cruise Syntax Error inside write()")
-        return
+            # --- 6. Loop Mechanics ("5 times write('Cruise')") ---
+            elif "times " in line:
+                count_str, action = line.split("times ", 1)
+                count = int(count_str.strip())
+                for _ in range(count):
+                    self._run_lines([action.strip()])
 
-    print(f"Cruise Syntax Error: Command '{line}' unrecognized.")
+            # --- 7. Print Statements ("write(...)") ---
+            elif line.startswith("write("):
+                content = line[6:].rstrip(")")
+                if content in self.variables:
+                    print(self.variables[content])
+                else:
+                    try:
+                        print(eval(content, {}, self.variables))
+                    except Exception:
+                        print(content.strip("'\""))
 
-def run_program(program_code):
-    lines = program_code.split('\n')
-    for line in lines:
-        run_line(line)
+            # --- 8. Variable Assignment ---
+            elif "=" in line:
+                var, val = line.split("=", 1)
+                self.variables[var.strip()] = eval(val.strip(), {}, self.variables)
 
-# --- 3. Interactive REPL Terminal --- 🖥️
-def start_interactive_repl():
-    global root
-    print("==================================================")
-    print("🚀 Welcome to the Cruise Language REPL! 🚀")
-    print("Type your Cruise code below. Type 'exit' or 'quit' to end.")
-    print("==================================================\n")
-    
-    while True:
-        try:
-            user_code = input("cruise> ").strip()
-            
-            if user_code.lower() in ["exit", "quit"]:
-                print("Exiting Cruise REPL. Goodbye! 👋")
-                break
-                
-            if user_code:
-                run_line(user_code)
-                
-            # Keep Tkinter UI alive and responsive if window opened 🪟
-            if root is not None:
-                try:
-                    root.update()
-                except tk.TclError:
-                    root = None  # Window was closed by user
-                    
-        except KeyboardInterrupt:
-            print("\nExiting Cruise REPL. Goodbye! 👋")
-            break
-        except Exception as e:
-            print(f"Cruise Runtime Error: {e}")
+            i += 1
 
+        if HAS_TKINTER and self.gui_root:
+            self.gui_root.mainloop()
+
+
+# --- CLI ENTRY POINT & REPL RUNNER ---
 def main():
-    # Handles executing files passed via terminal (e.g. cruise script.cru or cruise script.cruise)
+    interpreter = CruiseInterpreter()
+
     if len(sys.argv) > 1:
         filename = sys.argv[1]
-        
-        if not os.path.exists(filename):
-            print(f"Cruise File System Error: File '{filename}' not found.")
-            return
-
-        try:
-            with open(filename, "r", encoding="utf-8") as file:
-                program_code = file.read()
-                print(f"🚢 Executing Cruise script: {filename}\n")
-                run_program(program_code)
-                
-                if root is not None:
-                    print("\n[Cruise UI Window Running]: Visual app activated.")
-                    root.mainloop()
-        except Exception as e:
-            print(f"Cruise Execution Error: {e}")
+        if filename.endswith(('.cru', '.crui')):
+            if os.path.exists(filename):
+                with open(filename, 'r', encoding='utf-8') as f:
+                    code = f.read()
+                interpreter.execute_script(code)
+            else:
+                print(f"❌ Error: File '{filename}' not found!")
+        else:
+            print("❌ Error: Invalid file extension. Please use .cru or .crui")
     else:
-        start_interactive_repl()
+        # Interactive REPL Session
+        interpreter.print_welcome_banner()
+        while True:
+            try:
+                cmd = input("cruise> ")
+                if cmd.strip().lower() in ["exit", "quit"]:
+                    interpreter.print_exit_banner()
+                    break
+                if cmd.strip():
+                    interpreter.execute_script(cmd)
+            except (KeyboardInterrupt, EOFError):
+                interpreter.print_exit_banner()
+                break
+
 
 if __name__ == "__main__":
     main()
