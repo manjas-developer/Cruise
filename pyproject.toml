@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cruise-lang"
-version = "0.1.1"
+version = "0.2.0"
 authors = [
   { name = "Manjas Anand" }
 ]
@@ -14,7 +14,8 @@ requires-python = ">=3.8"
 dependencies = [
     "torch",
     "scikit-learn",
-    "numpy"
+    "numpy",
+    "requests"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
