@@ -36,7 +36,7 @@ If you enjoy using **Cruise**, consider supporting development via PhonePe / GPa
 
 **UPI ID:** `6200528007@axl`
 
-—--
+---
 
 # 🚀 Installation
 
