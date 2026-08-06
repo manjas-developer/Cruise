@@ -29,6 +29,15 @@ It focuses on:
 
 ---
 
+### 💖 Support My Work
+If you enjoy using **Cruise**, consider supporting development via PhonePe / GPay / Paytm:
+
+[![Sponsor via UPI](https://img.shields.io/badge/Sponsor_via-UPI-brightgreen?style=for-the-badge&logo=googlepay&logoColor=white)](https://upilink.in/pay/6200528007@axl)
+
+**UPI ID:** `6200528007@axl`
+
+—--
+
 # 🚀 Installation
 
 Install Cruise from PyPI:
