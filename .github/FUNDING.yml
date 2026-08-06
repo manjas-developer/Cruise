@@ -1,6 +1,0 @@
-# Direct PhonePe UPI Funding Configuration
-
-custom: [
-  "https://upilink.in/pay/6200528007@axl",
-  "https://upi.me/6200528007@axl"
-]
