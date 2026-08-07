@@ -29,13 +29,15 @@ It focuses on:
 
 ---
 
-### 💖 Support Development
+<div align="center">
 
-If you find **Cruise** helpful, support via PhonePe / GPay / Paytm!
+### 💖 Support My Work
 
-**UPI ID:** `6200528007@axl`
+If you find this project helpful and want to support my open-source work:
 
-[👉 Click Here to Pay via UPI](https://upilink.in/pay/6200528007@axl)
+[![Support My Work](https://img.shields.io/badge/Support_My_Work-FF813F?style=for-the-badge&logo=buy-me-a-coffee&logoColor=white)](https://buymeachai.in/manjasanand08)
+
+</div>
 
 ---
 
