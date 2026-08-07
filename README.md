@@ -29,12 +29,13 @@ It focuses on:
 
 ---
 
-### 💖 Support My Work
-If you enjoy using **Cruise**, consider supporting development via PhonePe / GPay / Paytm:
+### 💖 Support Development
 
-[![Sponsor via UPI](https://img.shields.io/badge/Sponsor_via-UPI-brightgreen?style=for-the-badge&logo=googlepay&logoColor=white)](https://upilink.in/pay/6200528007@axl)
+If you find **Cruise** helpful, support via PhonePe / GPay / Paytm!
 
 **UPI ID:** `6200528007@axl`
+
+[👉 Click Here to Pay via UPI](https://upilink.in/pay/6200528007@axl)
 
 ---
 
