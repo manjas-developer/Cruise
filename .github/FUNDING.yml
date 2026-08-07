@@ -1,1 +1,4 @@
-custom: ["https://upilink.in/pay/6200528007@axl", "https://upi.me/6200528007@axl"]
+custom: [
+  "https://upilink.in/pay?pa=6200528007@axl&pn=Manjas",
+  "https://upi.me/6200528007@axl"
+]
