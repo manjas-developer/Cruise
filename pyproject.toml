@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cruise-lang"
-version = "0.2.1"
+version = "0.2.1.r1"
 authors = [
   { name = "Manjas Anand" }
 ]
@@ -22,6 +22,11 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+
+[project.urls]
+Homepage = "https://manjas-developer.github.io/Cruise-Website/"
+Repository = "https://github.com/manjas-developer/Cruise"
+"Support My Work" = "https://buymeachai.ezee.li/manjas_developer"
 
 [project.scripts]
 cruise = "main:main"
