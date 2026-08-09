@@ -14,6 +14,19 @@
 
 ---
 
+<div align="center">
+
+### 💖 Support My Work
+
+If you find this project helpful and want to support my open-source work:
+
+[![Support My Work](https://img.shields.io/badge/Support_My_Work-FF813F?style=for-the-badge&logo=buy-me-a-coffee&logoColor=white)](https://buymeachai.ezee.li/manjas_developer)
+
+</div>
+
+---
+
+
 # ✨ Overview
 
 **Cruise** is a lightweight, modern, high-level programming language built in Python.
@@ -27,19 +40,9 @@ It focuses on:
 - 📦 Built-in utilities
 - 🔥 Zero configuration
 
----
-
-<div align="center">
-
-### 💖 Support My Work
-
-If you find this project helpful and want to support my open-source work:
-
-[![Support My Work](https://img.shields.io/badge/Support_My_Work-FF813F?style=for-the-badge&logo=buy-me-a-coffee&logoColor=white)](https://buymeachai.in/manjasanand08)
-
-</div>
 
 ---
+
 
 # 🚀 Installation
 
@@ -321,7 +324,8 @@ Made with ❤️ in Python.
 
 If you find this project helpful and want to support my open-source work:
 
-[![Support My Work](https://img.shields.io/badge/Support_My_Work-FF813F?style=for-the-badge&logo=buy-me-a-coffee&logoColor=white)](https://buymeachai.in/manjasanand08)
+[![Support My Work](https://img.shields.io/badge/Support_My_Work-FF813F?style=for-the-badge&logo=buy-me-a-coffee&logoColor=white)](https://buymeachai.ezee.li/manjas_developer)
 
 </div>
 
+---
