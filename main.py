@@ -1,111 +1,22 @@
-"""
-=============================================================================
-CRUISE PROGRAMMING LANGUAGE INTERPRETER (`cruise-lang`)
-Author: Manjas Anand
-Version: 0.2.0
-License: MIT
-Description: High-performance, lightweight tensor calculus, machine learning,
-             and UI execution engine built for multi-platform execution.
-=============================================================================
-"""
-
 import sys
 import os
-import math
-import time
-import json
 import re
+import math
+import urllib.request
+import tkinter as tk
 from typing import List, Dict, Any, Union, Optional
 
-# =============================================================================
-# 1. ENVIRONMENT & BACKEND DEPENDENCY MANAGEMENT
-# =============================================================================
-
-# HTTP Backend Engine
+# --- Optional PyTorch Engine Integration ---
 try:
-    import urllib.request
-    import urllib.parse
-    import urllib.error
-    HAS_URLLIB = True
+    import torch
+    TORCH_AVAILABLE = True
 except ImportError:
-    HAS_URLLIB = False
-
-# GUI Backend Driver (Tkinter) with Headless Environment Detection
-HAS_TKINTER = False
-try:
-    if os.environ.get('DISPLAY') or os.name == 'nt' or sys.platform == 'darwin':
-        import tkinter as tk
-        from tkinter import ttk, messagebox
-        HAS_TKINTER = True
-except Exception:
-    HAS_TKINTER = False
+    TORCH_AVAILABLE = False
 
 
-# =============================================================================
-# 2. ADVANCED TENSOR & ML ENGINE
-# =============================================================================
-
-class CruiseTensor:
-    """Lightweight, Native Tensor Architecture for ML & Linear Algebra."""
-    
-    def __init__(self, data: Union[int, float, List[Any]]):
-        if isinstance(data, (int, float)):
-            self.data = [float(data)]
-            self.shape = (1,)
-        elif isinstance(data, list):
-            self.data = self._flatten(data)
-            self.shape = (len(data),)
-        else:
-            raise TypeError("CruiseTensor input must be a scalar, vector, or list.")
-
-    def _flatten(self, lst: List[Any]) -> List[float]:
-        flat = []
-        for item in lst:
-            if isinstance(item, list):
-                flat.extend(self._flatten(item))
-            else:
-                flat.append(float(item))
-        return flat
-
-    def add(self, other: Union['CruiseTensor', float, int]) -> 'CruiseTensor':
-        if isinstance(other, CruiseTensor):
-            if len(self.data) != len(other.data):
-                raise ValueError("Tensor dimension mismatch for addition.")
-            return CruiseTensor([a + b for a, b in zip(self.data, other.data)])
-        return CruiseTensor([a + float(other) for a in self.data])
-
-    def multiply(self, other: Union['CruiseTensor', float, int]) -> 'CruiseTensor':
-        if isinstance(other, CruiseTensor):
-            if len(self.data) != len(other.data):
-                raise ValueError("Tensor dimension mismatch for multiplication.")
-            return CruiseTensor([a * b for a, b in zip(self.data, other.data)])
-        return CruiseTensor([a * float(other) for a in self.data])
-
-    def sum(self) -> float:
-        return sum(self.data)
-
-    def mean(self) -> float:
-        return sum(self.data) / len(self.data) if self.data else 0.0
-
-    def relu(self) -> 'CruiseTensor':
-        return CruiseTensor([max(0.0, x) for x in self.data])
-
-    def __repr__(self) -> str:
-        return f"CruiseTensor(shape={self.shape}, values={self.data})"
-
-
-# =============================================================================
-# 3. LEXER & TOKENIZER
-# =============================================================================
-
-class TokenType:
-    KEYWORD = "KEYWORD"
-    IDENTIFIER = "IDENTIFIER"
-    NUMBER = "NUMBER"
-    STRING = "STRING"
-    OPERATOR = "OPERATOR"
-    DELIMITER = "DELIMITER"
-    EOF = "EOF"
+# ==========================================
+# 1. ADVANCED LEXER 🔍
+# ==========================================
 
 class Token:
     def __init__(self, type_: str, value: Any, line: int):
@@ -116,286 +27,514 @@ class Token:
     def __repr__(self):
         return f"Token({self.type}, {repr(self.value)})"
 
-class CruiseLexer:
-    KEYWORDS = {"define", "end", "times", "write", "fetch", "post", "background", "button", "tensor", "if", "else"}
+KEYWORDS = {
+    "let", "if", "else", "while", "fn", "return", 
+    "import", "tensor", "write", "gui", "opt"
+}
 
-    def __init__(self, source_code: str):
-        self.source = source_code
-        self.position = 0
+class Lexer:
+    def __init__(self, source: str):
+        self.source = source
+        self.pos = 0
         self.line = 1
+        self.tokens: List[Token] = []
+
+    def error(self, msg: str):
+        raise SyntaxError(f"[Cruise Lexer Error] Line {self.line}: {msg}")
 
     def tokenize(self) -> List[Token]:
-        tokens = []
-        while self.position < len(self.source):
-            char = self.source[self.position]
+        while self.pos < len(self.source):
+            ch = self.source[self.pos]
 
-            if char in " \t\r":
-                self.position += 1
-            elif char == "\n":
+            if ch == '\n':
                 self.line += 1
-                self.position += 1
-            elif char == "#":
-                while self.position < len(self.source) and self.source[self.position] != "\n":
-                    self.position += 1
-            elif char.isalpha() or char == "_":
-                tokens.append(self._read_identifier())
-            elif char.isdigit() or (char == "." and self._peek().isdigit()):
-                tokens.append(self._read_number())
-            elif char in "\"'":
-                tokens.append(self._read_string(char))
-            elif char in "+-*/=":
-                tokens.append(Token(TokenType.OPERATOR, char, self.line))
-                self.position += 1
-            elif char in "(),:":
-                tokens.append(Token(TokenType.DELIMITER, char, self.line))
-                self.position += 1
+                self.tokens.append(Token("NEWLINE", "\n", self.line))
+                self.pos += 1
+            elif ch.isspace():
+                self.pos += 1
+            elif ch == '#':  # Comments
+                while self.pos < len(self.source) and self.source[self.pos] != '\n':
+                    self.pos += 1
+            elif ch.isdigit() or (ch == '.' and self.peek().isdigit()):
+                self.tokens.append(self.read_number())
+            elif ch.isalpha() or ch == '_':
+                self.tokens.append(self.read_identifier())
+            elif ch in ('"', "'"):
+                self.tokens.append(self.read_string(ch))
+            elif ch in ("=", "!", ">", "<"):
+                self.tokens.append(self.read_operator())
+            elif ch in "+-*/%":
+                self.tokens.append(Token("OP", ch, self.line))
+                self.pos += 1
+            elif ch == '(':
+                self.tokens.append(Token("LPAREN", "(", self.line))
+                self.pos += 1
+            elif ch == ')':
+                self.tokens.append(Token("RPAREN", ")", self.line))
+                self.pos += 1
+            elif ch == '[':
+                self.tokens.append(Token("LBRACK", "[", self.line))
+                self.pos += 1
+            elif ch == ']':
+                self.tokens.append(Token("RBRACK", "]", self.line))
+                self.pos += 1
+            elif ch == ':':
+                self.tokens.append(Token("COLON", ":", self.line))
+                self.pos += 1
+            elif ch == ',':
+                self.tokens.append(Token("COMMA", ",", self.line))
+                self.pos += 1
             else:
-                self.position += 1  # Ignore unknown characters
+                self.error(f"Unexpected character '{ch}'")
+
+        self.tokens.append(Token("EOF", None, self.line))
+        return self.tokens
+
+    def peek(self) -> str:
+        return self.source[self.pos + 1] if self.pos + 1 < len(self.source) else ''
+
+    def read_number(self) -> Token:
+        num_str = ""
+        while self.pos < len(self.source) and (self.source[self.pos].isdigit() or self.source[self.pos] == '.'):
+            num_str += self.source[self.pos]
+            self.pos += 1
+        val = float(num_str) if '.' in num_str else int(num_str)
+        return Token("NUMBER", val, self.line)
+
+    def read_identifier(self) -> Token:
+        ident = ""
+        while self.pos < len(self.source) and (self.source[self.pos].isalnum() or self.source[self.pos] == '_'):
+            ident += self.source[self.pos]
+            self.pos += 1
+        type_ = "KEYWORD" if ident in KEYWORDS else "IDENT"
+        return Token(type_, ident, self.line)
+
+    def read_string(self, quote: str) -> Token:
+        self.pos += 1 # skip opening quote
+        str_val = ""
+        while self.pos < len(self.source) and self.source[self.pos] != quote:
+            str_val += self.source[self.pos]
+            self.pos += 1
+        self.pos += 1 # skip closing quote
+        return Token("STRING", str_val, self.line)
+
+    def read_operator(self) -> Token:
+        ch = self.source[self.pos]
+        self.pos += 1
+        if self.pos < len(self.source) and self.source[self.pos] == '=':
+            op = ch + '='
+            self.pos += 1
+            return Token("OP", op, self.line)
+        return Token("ASSIGN" if ch == '=' else "OP", ch, self.line)
+
+
+# ==========================================
+# 2. ABSTRACT SYNTAX TREE (AST) PARSER 🌳
+# ==========================================
+
+class ASTNode: pass
+
+class NumberNode(ASTNode):
+    def __init__(self, val): self.val = val
+class StringNode(ASTNode):
+    def __init__(self, val): self.val = val
+class VarNode(ASTNode):
+    def __init__(self, name): self.name = name
+class ListNode(ASTNode):
+    def __init__(self, elements): self.elements = elements
+class AssignNode(ASTNode):
+    def __init__(self, name, expr): self.name = name; self.expr = expr
+class BinOpNode(ASTNode):
+    def __init__(self, left, op, right): self.left = left; self.op = op; self.right = right
+class CallNode(ASTNode):
+    def __init__(self, callee, args): self.callee = callee; self.args = args
+class IfNode(ASTNode):
+    def __init__(self, cond, then_block, else_block=None): self.cond = cond; self.then_block = then_block; self.else_block = else_block
+class WhileNode(ASTNode):
+    def __init__(self, cond, body): self.cond = cond; self.body = body
+class FuncNode(ASTNode):
+    def __init__(self, name, params, body): self.name = name; self.params = params; self.body = body
+class ReturnNode(ASTNode):
+    def __init__(self, expr): self.expr = expr
+class ImportNode(ASTNode):
+    def __init__(self, module_name): self.module_name = module_name
+
+class Parser:
+    def __init__(self, tokens: List[Token]):
+        self.tokens = tokens
+        self.pos = 0
+
+    def error(self, msg: str):
+        tok = self.current()
+        raise SyntaxError(f"[Cruise Parser Error] Line {tok.line}: {msg} at '{tok.value}'")
+
+    def current(self) -> Token:
+        return self.tokens[self.pos]
+
+    def eat(self, type_: str, value: Any = None) -> Token:
+        tok = self.current()
+        if tok.type == type_ and (value is None or tok.value == value):
+            self.pos += 1
+            return tok
+        self.error(f"Expected {type_} ({value}), got {tok.type} ({tok.value})")
+
+    def skip_newlines(self):
+        while self.current().type == "NEWLINE":
+            self.pos += 1
+
+    def parse(self) -> List[ASTNode]:
+        statements = []
+        while self.current().type != "EOF":
+            self.skip_newlines()
+            if self.current().type == "EOF": break
+            statements.append(self.statement())
+            self.skip_newlines()
+        return statements
+
+    def statement(self) -> ASTNode:
+        tok = self.current()
         
-        tokens.append(Token(TokenType.EOF, "", self.line))
-        return tokens
+        if tok.type == "KEYWORD":
+            if tok.value == "let":
+                self.eat("KEYWORD", "let")
+                name = self.eat("IDENT").value
+                self.eat("ASSIGN")
+                expr = self.expr()
+                return AssignNode(name, expr)
+            elif tok.value == "if":
+                return self.if_statement()
+            elif tok.value == "while":
+                return self.while_statement()
+            elif tok.value == "fn":
+                return self.func_def()
+            elif tok.value == "return":
+                self.eat("KEYWORD", "return")
+                return ReturnNode(self.expr())
+            elif tok.value == "import":
+                self.eat("KEYWORD", "import")
+                mod_name = self.eat("IDENT").value
+                return ImportNode(mod_name)
+            elif tok.value == "write":
+                self.eat("KEYWORD", "write")
+                return CallNode("write", [self.expr()])
 
-    def _peek(self) -> str:
-        if self.position + 1 < len(self.source):
-            return self.source[self.position + 1]
-        return ""
+        # Handle simple assignment: x = expr (Support single '=' flexibility)
+        if tok.type == "IDENT" and self.peek_type() == "ASSIGN":
+            name = self.eat("IDENT").value
+            self.eat("ASSIGN")
+            return AssignNode(name, self.expr())
 
-    def _read_identifier(self) -> Token:
-        start = self.position
-        while self.position < len(self.source) and (self.source[self.position].isalnum() or self.source[self.position] == "_"):
-            self.position += 1
-        val = self.source[start:self.position]
-        token_type = TokenType.KEYWORD if val in self.KEYWORDS else TokenType.IDENTIFIER
-        return Token(token_type, val, self.line)
+        return self.expr()
 
-    def _read_number(self) -> Token:
-        start = self.position
-        has_dot = False
-        while self.position < len(self.source) and (self.source[self.position].isdigit() or self.source[self.position] == "."):
-            if self.source[self.position] == ".":
-                if has_dot: break
-                has_dot = True
-            self.position += 1
-        num_str = self.source[start:self.position]
-        return Token(TokenType.NUMBER, float(num_str) if has_dot else int(num_str), self.line)
+    def peek_type(self) -> str:
+        return self.tokens[self.pos + 1].type if self.pos + 1 < len(self.tokens) else "EOF"
 
-    def _read_string(self, quote_char: str) -> Token:
-        self.position += 1 # Skip open quote
-        start = self.position
-        while self.position < len(self.source) and self.source[self.position] != quote_char:
-            self.position += 1
-        val = self.source[start:self.position]
-        self.position += 1 # Skip close quote
-        return Token(TokenType.STRING, val, self.line)
+    def if_statement() -> IfNode:
+        self.eat("KEYWORD", "if")
+        cond = self.expr()
+        self.eat("COLON")
+        then_block = []
+        self.skip_newlines()
+        
+        while not (self.current().type == "KEYWORD" and self.current().value in ("else", "end")):
+            then_block.append(self.statement())
+            self.skip_newlines()
+
+        else_block = None
+        if self.current().type == "KEYWORD" and self.current().value == "else":
+            self.eat("KEYWORD", "else")
+            self.eat("COLON")
+            self.skip_newlines()
+            else_block = []
+            while not (self.current().type == "KEYWORD" and self.current().value == "end"):
+                else_block.append(self.statement())
+                self.skip_newlines()
+
+        self.eat("KEYWORD", "end")
+        return IfNode(cond, then_block, else_block)
+
+    def while_statement() -> WhileNode:
+        self.eat("KEYWORD", "while")
+        cond = self.expr()
+        self.eat("COLON")
+        body = []
+        self.skip_newlines()
+        while not (self.current().type == "KEYWORD" and self.current().value == "end"):
+            body.append(self.statement())
+            self.skip_newlines()
+        self.eat("KEYWORD", "end")
+        return WhileNode(cond, body)
+
+    def func_def() -> FuncNode:
+        self.eat("KEYWORD", "fn")
+        name = self.eat("IDENT").value
+        self.eat("LPAREN")
+        params = []
+        if self.current().type == "IDENT":
+            params.append(self.eat("IDENT").value)
+            while self.current().type == "COMMA":
+                self.eat("COMMA")
+                params.append(self.eat("IDENT").value)
+        self.eat("RPAREN")
+        self.eat("COLON")
+        body = []
+        self.skip_newlines()
+        while not (self.current().type == "KEYWORD" and self.current().value == "end"):
+            body.append(self.statement())
+            self.skip_newlines()
+        self.eat("KEYWORD", "end")
+        return FuncNode(name, params, body)
+
+    def expr() -> ASTNode:
+        left = self.comp_expr()
+        while self.current().type == "OP" and self.current().value in ("==", "!=", "<", ">", "<=", ">="):
+            op = self.eat("OP").value
+            right = self.comp_expr()
+            left = BinOpNode(left, op, right)
+        return left
+
+    def comp_expr() -> ASTNode:
+        left = self.term()
+        while self.current().type == "OP" and self.current().value in ("+", "-"):
+            op = self.eat("OP").value
+            right = self.term()
+            left = BinOpNode(left, op, right)
+        return left
+
+    def term() -> ASTNode:
+        left = self.factor()
+        while self.current().type == "OP" and self.current().value in ("*", "/", "%"):
+            op = self.eat("OP").value
+            right = self.factor()
+            left = BinOpNode(left, op, right)
+        return left
+
+    def factor() -> ASTNode:
+        tok = self.current()
+        if tok.type == "NUMBER":
+            self.eat("NUMBER")
+            return NumberNode(tok.value)
+        elif tok.type == "STRING":
+            self.eat("STRING")
+            return StringNode(tok.value)
+        elif tok.type == "IDENT":
+            name = self.eat("IDENT").value
+            if self.current().type == "LPAREN":
+                self.eat("LPAREN")
+                args = []
+                if self.current().type != "RPAREN":
+                    args.append(self.expr())
+                    while self.current().type == "COMMA":
+                        self.eat("COMMA")
+                        args.append(self.expr())
+                self.eat("RPAREN")
+                return CallNode(name, args)
+            return VarNode(name)
+        elif tok.type == "LBRACK":
+            self.eat("LBRACK")
+            elements = []
+            if self.current().type != "RBRACK":
+                elements.append(self.expr())
+                while self.current().type == "COMMA":
+                    self.eat("COMMA")
+                    elements.append(self.expr())
+            self.eat("RBRACK")
+            return ListNode(elements)
+        elif tok.type == "LPAREN":
+            self.eat("LPAREN")
+            node = self.expr()
+            self.eat("RPAREN")
+            return node
+        self.error("Unexpected factor expression")
 
 
-# =============================================================================
-# 4. MEMORY SCOPING & RUNTIME ENVIRONMENT
-# =============================================================================
+# ==========================================
+# 3. INTERPRETER & ENVIRONMENT 🧠
+# ==========================================
+
+class ReturnException(Exception):
+    def __init__(self, value): self.value = value
 
 class Environment:
-    """Manages Scoped Variables and Function Memory Frames."""
-    def __init__(self, parent: Optional['Environment'] = None):
-        self.bindings: Dict[str, Any] = {}
+    def __init__(self, parent=None):
+        self.vars: Dict[str, Any] = {}
         self.parent = parent
 
-    def set(self, name: str, value: Any):
-        self.bindings[name] = value
-
     def get(self, name: str) -> Any:
-        if name in self.bindings:
-            return self.bindings[name]
+        if name in self.vars:
+            return self.vars[name]
         if self.parent:
             return self.parent.get(name)
-        raise NameError(f"Undefined variable or function symbol '{name}' in Cruise scope.")
+        raise NameError(f"[Cruise Engine] Variable '{name}' is not defined.")
 
+    def set(self, name: str, val: Any):
+        self.vars[name] = val
 
-# =============================================================================
-# 5. CORE INTERPRETER ENGINE
-# =============================================================================
-
-class CruiseInterpreter:
+class Interpreter:
     def __init__(self):
         self.global_env = Environment()
-        self.functions: Dict[str, Dict[str, Any]] = {}
-        self.gui_root = None
-        self.version = "0.2.0"
-        self.creator = "Manjas Anand"
+        self._setup_builtins()
 
-    def print_welcome_banner(self):
-        """Displays startup personalized REPL banner."""
-        print("=" * 70)
-        print(f"  🚢 CRUISE PROGRAMMING LANGUAGE REPL v{self.version}")
-        print(f"  👨‍💻 Designed & Developed with ❤️ by {self.creator}")
-        print("  ⚡ Tensor Calculus | ML Engine | Native Web & Desktop UI")
-        print("  💡 Type 'exit', 'quit', or press Ctrl+C to close the shell session.")
-        print("=" * 70)
+    def _setup_builtins(self):
+        # Write / Print
+        self.global_env.set("write", print)
+        
+        # Math Library 📐
+        self.global_env.set("sin", math.sin)
+        self.global_env.set("cos", math.cos)
+        self.global_env.set("sqrt", math.sqrt)
+        self.global_env.set("pi", math.pi)
 
-    def print_exit_banner(self):
-        """Displays exit personalized REPL banner."""
-        print("\n" + "=" * 70)
-        print(f"  👋 Thank you for building with Cruise Language, {self.creator}!")
-        print("  🚀 Keep crushing code, training models, and innovating!")
-        print("=" * 70)
+        # PyTorch Tensor Calculus & Optimizers 🧠
+        if TORCH_AVAILABLE:
+            self.global_env.set("tensor", lambda data, req_grad=False: torch.tensor(data, dtype=torch.float32, requires_grad=req_grad))
+            self.global_env.set("grad", lambda t: t.grad)
+            self.global_env.set("backward", lambda t: t.backward())
+            self.global_env.set("opt_sgd", lambda params, lr=0.01: torch.optim.SGD(params, lr=lr))
+            self.global_env.set("opt_adam", lambda params, lr=0.001: torch.optim.Adam(params, lr=lr))
 
-    def execute_script(self, code_text: str):
-        """Line-by-Line AST Execution Engine with error handling."""
-        lines = [line.strip() for line in code_text.splitlines() if line.strip() and not line.strip().startswith("#")]
-        self._eval_block(lines, self.global_env)
+        # GUI Framework 🖼️
+        self.global_env.set("gui_window", self._gui_window)
 
-    def _eval_block(self, lines: List[str], env: Environment):
-        i = 0
-        while i < len(lines):
-            line = lines[i]
+    def _gui_window(self, title: str, btn_text: str, callback):
+        root = tk.Tk()
+        root.title(title)
+        root.geometry("300x150")
+        lbl = tk.Label(root, text=title, font=("Arial", 12))
+        lbl.pack(pady=10)
+        btn = tk.Button(root, text=btn_text, command=lambda: callback(), bg="#4CAF50", fg="white")
+        btn.pack(pady=10)
+        root.mainloop()
 
-            # --- 1. Function Definition ("define name(arg1, arg2): ... end") ---
-            if line.startswith("define "):
-                func_header = line[7:].rstrip(":")
-                func_name, args_part = func_header.split("(")
-                func_name = func_name.strip()
-                arg_names = [a.strip() for a in args_part.rstrip(")").split(",") if a.strip()]
+    def eval(self, node: ASTNode, env: Environment) -> Any:
+        if isinstance(node, NumberNode):
+            return node.val
+        elif isinstance(node, StringNode):
+            return node.val
+        elif isinstance(node, ListNode):
+            return [self.eval(elem, env) for elem in node.elements]
+        elif isinstance(node, VarNode):
+            return env.get(node.name)
+        elif isinstance(node, AssignNode):
+            val = self.eval(node.expr, env)
+            env.set(node.name, val)
+            return val
+        elif isinstance(node, BinOpNode):
+            left = self.eval(node.left, env)
+            right = self.eval(node.right, env)
+            if node.op == '+': return left + right
+            elif node.op == '-': return left - right
+            elif node.op == '*': return left * right
+            elif node.op == '/': return left / right
+            elif node.op == '==': return left == right
+            elif node.op == '!=': return left != right
+            elif node.op == '<': return left < right
+            elif node.op == '>': return left > right
+        elif isinstance(node, CallNode):
+            fn = env.get(node.callee) if isinstance(node.callee, str) else self.eval(node.callee, env)
+            args = [self.eval(arg, env) for arg in node.args]
+            if callable(fn):
+                return fn(*args)
+            elif isinstance(fn, FuncNode):
+                local_env = Environment(parent=env)
+                for param, arg in zip(fn.params, args):
+                    local_env.set(param, arg)
+                try:
+                    for stmt in fn.body:
+                        self.eval(stmt, local_env)
+                except ReturnException as ret:
+                    return ret.value
+                return None
+        elif isinstance(node, IfNode):
+            if self.eval(node.cond, env):
+                for stmt in node.then_block: self.eval(stmt, env)
+            elif node.else_block:
+                for stmt in node.else_block: self.eval(stmt, env)
+        elif isinstance(node, WhileNode):
+            while self.eval(node.cond, env):
+                for stmt in node.body: self.eval(stmt, env)
+        elif isinstance(node, FuncNode):
+            env.set(node.name, node)
+            return node
+        elif isinstance(node, ReturnNode):
+            raise ReturnException(self.eval(node.expr, env))
+        elif isinstance(node, ImportNode):
+            self._import_module(node.module_name, env)
 
-                body_lines = []
-                i += 1
-                while i < len(lines) and lines[i] != "end":
-                    body_lines.append(lines[i])
-                    i += 1
+    def _import_module(self, mod_name: str, env: Environment):
+        file_path = f"{mod_name}.cru"
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"[Cruise Import Error] Cannot find module '{file_path}'")
+        with open(file_path, "r") as f:
+            code = f.read()
+        lexer = Lexer(code)
+        parser = Parser(lexer.tokenize())
+        nodes = parser.parse()
+        for node in nodes:
+            self.eval(node, env)
 
-                self.functions[func_name] = {
-                    "args": arg_names,
-                    "body": body_lines
-                }
 
-            # --- 2. Function Execution ---
-            elif "(" in line and line.endswith(")") and not any(line.startswith(kw) for kw in ["write", "fetch", "post", "background", "button", "tensor"]):
-                func_name, args_part = line.rstrip(")").split("(", 1)
-                func_name = func_name.strip()
+# ==========================================
+# 4. CRUISE PACKAGE MANAGER (CPM) 📦
+# ==========================================
 
-                if func_name in self.functions:
-                    raw_args = [a.strip() for a in args_part.split(",") if a.strip()]
-                    func_data = self.functions[func_name]
-
-                    # Create scoped environment frame
-                    local_env = Environment(parent=env)
-                    for param, val_expr in zip(func_data["args"], raw_args):
-                        local_env.set(param, self._eval_expression(val_expr, env))
-
-                    self._eval_block(func_data["body"], local_env)
-
-            # --- 3. HTTP Request Library ("fetch", "post") ---
-            elif "fetch(" in line:
-                var_name, url_part = line.split("=", 1) if "=" in line else (None, line)
-                url = url_part.split("fetch(")[1].rstrip(")").strip("'\"")
-                
-                if HAS_URLLIB:
-                    try:
-                        req = urllib.request.Request(url, headers={'User-Agent': 'Cruise-Lang/0.2.0'})
-                        with urllib.request.urlopen(req) as response:
-                            res_data = response.read().decode('utf-8')
-                            if var_name:
-                                env.set(var_name.strip(), res_data)
-                            else:
-                                print(res_data)
-                    except Exception as e:
-                        print(f"⚠️ Cruise HTTP Request Failed: {e}")
-
-            # --- 4. Native Tensor Initialization ("t = tensor([1, 2, 3])") ---
-            elif "tensor(" in line:
-                var_name, tensor_part = line.split("=", 1)
-                raw_list = tensor_part.split("tensor(")[1].rstrip(")")
-                parsed_list = eval(raw_list)
-                env.set(var_name.strip(), CruiseTensor(parsed_list))
-
-            # --- 5. GUI Builder Engines ("background", "button") ---
-            elif line.startswith("background("):
-                color = line.split("background(")[1].rstrip(")").strip("'\"")
-                if HAS_TKINTER:
-                    if not self.gui_root:
-                        self.gui_root = tk.Tk()
-                        self.gui_root.title(f"Cruise GUI Engine — Creator: {self.creator}")
-                        self.gui_root.geometry("450x350")
-                    self.gui_root.configure(bg=color)
-                else:
-                    print(f"🎨 [GUI Headless Rendering]: Window background set to '{color}'")
-
-            elif line.startswith("button("):
-                btn_text = line.split("button(")[1].rstrip(")").strip("'\"")
-                if HAS_TKINTER and self.gui_root:
-                    btn = tk.Button(self.gui_root, text=btn_text, font=("Helvetica", 12, "bold"))
-                    btn.pack(pady=12)
-                else:
-                    print(f"🔘 [GUI Headless Rendering]: Button component '{btn_text}' mounted")
-
-            # --- 6. Loop Mechanisms ("5 times write('Engine')") ---
-            elif "times " in line:
-                count_str, action = line.split("times ", 1)
-                count = int(count_str.strip())
-                for _ in range(count):
-                    self._eval_block([action.strip()], env)
-
-            # --- 7. Output Console Engine ("write(...)") ---
-            elif line.startswith("write("):
-                content = line[6:].rstrip(")")
-                val = self._eval_expression(content, env)
-                print(val)
-
-            # --- 8. Variable Assignment ("x = 10") ---
-            elif "=" in line:
-                var, val_expr = line.split("=", 1)
-                env.set(var.strip(), self._eval_expression(val_expr.strip(), env))
-
-            i += 1
-
-        if HAS_TKINTER and self.gui_root:
-            self.gui_root.mainloop()
-
-    def _eval_expression(self, expr: str, env: Environment) -> Any:
-        """Evaluates arithmetic expressions and dynamic variables safely."""
-        expr = expr.strip()
-        if (expr.startswith("'") and expr.endswith("'")) or (expr.startswith('"') and expr.endswith('"')):
-            return expr[1:-1]
+def cruise_package_manager(cmd: str, pkg_name: str):
+    if cmd == "install":
+        print(f"📦 [CPM] Fetching package '{pkg_name}'...")
+        # Simulated package installer fetching module template
+        url = f"https://raw.githubusercontent.com/manjas-developer/cruise-packages/main/{pkg_name}.cru"
         try:
-            return env.get(expr)
-        except NameError:
-            try:
-                return eval(expr, {}, env.bindings)
-            except Exception:
-                return expr
+            content = f"# Package: {pkg_name}\nfn {pkg_name}_hello():\n  write('{pkg_name} initialized!')\nend\n"
+            with open(f"{pkg_name}.cru", "w") as f:
+                f.write(content)
+            print(f"✅ [CPM] Successfully installed '{pkg_name}' into workspace!")
+        except Exception as e:
+            print(f"❌ [CPM] Failed to install package: {e}")
 
 
-# =============================================================================
-# 6. CLI & REPL ENTRY POINT
-# =============================================================================
+# ==========================================
+# 5. CLI & REPL ENTRY POINT 🚀
+# ==========================================
 
 def main():
-    interpreter = CruiseInterpreter()
-
     if len(sys.argv) > 1:
-        filename = sys.argv[1]
-        if filename.endswith(('.cru', '.crui')):
-            if os.path.exists(filename):
-                with open(filename, 'r', encoding='utf-8') as f:
-                    code = f.read()
-                interpreter.execute_script(code)
-            else:
-                print(f"❌ Error: Script file '{filename}' not found!")
+        arg1 = sys.argv[1]
+        
+        # Package Manager Subcommand
+        if arg1 == "install" and len(sys.argv) > 2:
+            cruise_package_manager("install", sys.argv[2])
+            return
+
+        # Execute File
+        if os.path.exists(arg1):
+            with open(arg1, "r") as f:
+                code = f.read()
+            interpreter = Interpreter()
+            lexer = Lexer(code)
+            parser = Parser(lexer.tokenize())
+            ast_nodes = parser.parse()
+            for node in ast_nodes:
+                interpreter.eval(node, interpreter.global_env)
         else:
-            print("❌ Error: Invalid extension. Please use .cru or .crui files.")
+            print(f"File '{arg1}' not found.")
     else:
-        # Interactive Shell / REPL Engine
-        interpreter.print_welcome_banner()
+        # REPL Mode
+        print("🚢 Cruise Language REPL v0.3.0 Engine")
+        print("Type 'exit()' to close.\n")
+        interpreter = Interpreter()
         while True:
             try:
-                cmd = input("cruise> ")
-                if cmd.strip().lower() in ["exit", "quit"]:
-                    interpreter.print_exit_banner()
-                    break
-                if cmd.strip():
-                    interpreter.execute_script(cmd)
-            except (KeyboardInterrupt, EOFError):
-                interpreter.print_exit_banner()
-                break
-
+                line = input("cruise> ")
+                if line.strip() == "exit()": break
+                if not line.strip(): continue
+                lexer = Lexer(line)
+                parser = Parser(lexer.tokenize())
+                nodes = parser.parse()
+                for node in nodes:
+                    res = interpreter.eval(node, interpreter.global_env)
+                    if res is not None: print(res)
+            except Exception as e:
+                print(f"Error: {e}")
 
 if __name__ == "__main__":
     main()
