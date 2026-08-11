@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cruise-lang"
-version = "0.2.1.r1"
+version = "0.3.0"
 authors = [
   { name = "Manjas Anand" }
 ]
