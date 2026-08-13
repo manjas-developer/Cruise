@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cruise-lang"
-version = "0.3.0"
+version = "0.3.1"
 authors = [
   { name = "Manjas Anand" }
 ]
@@ -26,7 +26,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://manjas-developer.github.io/Cruise-Website/"
 Repository = "https://github.com/manjas-developer/Cruise"
-"Support My Work" = "https://buymeachai.ezee.li/manjas_developer"
+"Support My Work" = "https://buymeachai.in/manjasanand08"
 
 [project.scripts]
 cruise = "main:main"
