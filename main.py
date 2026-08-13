@@ -218,7 +218,7 @@ class Parser:
                 self.eat("KEYWORD", "write")
                 return CallNode("write", [self.expr()])
 
-        # Handle simple assignment: x = expr (Support single '=' flexibility)
+        # Handle simple assignment: x = expr
         if tok.type == "IDENT" and self.peek_type() == "ASSIGN":
             name = self.eat("IDENT").value
             self.eat("ASSIGN")
@@ -229,7 +229,7 @@ class Parser:
     def peek_type(self) -> str:
         return self.tokens[self.pos + 1].type if self.pos + 1 < len(self.tokens) else "EOF"
 
-    def if_statement() -> IfNode:
+    def if_statement(self) -> IfNode:
         self.eat("KEYWORD", "if")
         cond = self.expr()
         self.eat("COLON")
@@ -253,7 +253,7 @@ class Parser:
         self.eat("KEYWORD", "end")
         return IfNode(cond, then_block, else_block)
 
-    def while_statement() -> WhileNode:
+    def while_statement(self) -> WhileNode:
         self.eat("KEYWORD", "while")
         cond = self.expr()
         self.eat("COLON")
@@ -265,7 +265,7 @@ class Parser:
         self.eat("KEYWORD", "end")
         return WhileNode(cond, body)
 
-    def func_def() -> FuncNode:
+    def func_def(self) -> FuncNode:
         self.eat("KEYWORD", "fn")
         name = self.eat("IDENT").value
         self.eat("LPAREN")
@@ -285,7 +285,7 @@ class Parser:
         self.eat("KEYWORD", "end")
         return FuncNode(name, params, body)
 
-    def expr() -> ASTNode:
+    def expr(self) -> ASTNode:
         left = self.comp_expr()
         while self.current().type == "OP" and self.current().value in ("==", "!=", "<", ">", "<=", ">="):
             op = self.eat("OP").value
@@ -293,7 +293,7 @@ class Parser:
             left = BinOpNode(left, op, right)
         return left
 
-    def comp_expr() -> ASTNode:
+    def comp_expr(self) -> ASTNode:
         left = self.term()
         while self.current().type == "OP" and self.current().value in ("+", "-"):
             op = self.eat("OP").value
@@ -301,7 +301,7 @@ class Parser:
             left = BinOpNode(left, op, right)
         return left
 
-    def term() -> ASTNode:
+    def term(self) -> ASTNode:
         left = self.factor()
         while self.current().type == "OP" and self.current().value in ("*", "/", "%"):
             op = self.eat("OP").value
@@ -309,7 +309,7 @@ class Parser:
             left = BinOpNode(left, op, right)
         return left
 
-    def factor() -> ASTNode:
+    def factor(self) -> ASTNode:
         tok = self.current()
         if tok.type == "NUMBER":
             self.eat("NUMBER")
@@ -481,8 +481,6 @@ class Interpreter:
 def cruise_package_manager(cmd: str, pkg_name: str):
     if cmd == "install":
         print(f"📦 [CPM] Fetching package '{pkg_name}'...")
-        # Simulated package installer fetching module template
-        url = f"https://raw.githubusercontent.com/manjas-developer/cruise-packages/main/{pkg_name}.cru"
         try:
             content = f"# Package: {pkg_name}\nfn {pkg_name}_hello():\n  write('{pkg_name} initialized!')\nend\n"
             with open(f"{pkg_name}.cru", "w") as f:
