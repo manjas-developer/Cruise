@@ -1,3 +1,9 @@
-# Supported funding model platforms
+# .github/FUNDING.yml
 
-custom: ['https://throne.com/manjas-developer/item/d83a6389-fc12-4d64-a4e1-cf4dc4d1dc45']
+# 💖 Sponsor links for Cruise Programming Language
+custom:
+  # 🇮🇳 Indian Users Support Here
+  - 'https://buymeachai.in/manjasanand08'
+
+  # 🌍 International Users Support Here
+  - 'https://throne.com/manjas-developer/item/d83a6389-fc12-4d64-a4e1-cf4dc4d1dc45'
