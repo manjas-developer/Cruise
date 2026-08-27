@@ -6,19 +6,39 @@ build-backend = "setuptools.build_meta"
 name = "cruise-lang"
 version = "0.4.0"
 authors = [
-  { name = "Manjas Anand" }
+  { name = "Manjas Anand", email = "manjasanand08@gmail.com" }
 ]
-description = "Cruise: An AI-powered, tensor-ready lightweight programming language interpreter."
+description = "Cruise: An AI-powered, tensor-ready lightweight programming language with AST parser, CPM package manager, and GUI framework."
 readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.8"
+keywords = [
+  "cruise-lang",
+  "cruise",
+  "programming-language",
+  "interpreter",
+  "ast-parser",
+  "pytorch-tensors",
+  "cpm-package-manager",
+  "deep-learning"
+]
 dependencies = [
     "torch",
-    "scikit-learn",
     "numpy",
     "requests"
 ]
 classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Topic :: Software Development :: Interpreters",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
@@ -26,10 +46,13 @@ classifiers = [
 [project.urls]
 Homepage = "https://manjas-developer.github.io/Cruise-Website/"
 Repository = "https://github.com/manjas-developer/Cruise"
-"Support My Work" = "https://buymeachai.in/manjasanand08"
+Documentation = "https://manjas-developer.github.io/Cruise-Website/"
+"Bug Tracker" = "https://github.com/manjas-developer/Cruise/issues"
+"Indian Users Support Here" = "https://buymeachai.in/manjasanand08"
+"International Users Support Here" = "https://throne.com/manjas-developer/item/d83a6389-fc12-4d64-a4e1-cf4dc4d1dc45"
 
 [project.scripts]
-cruise = "main:main"
+cruise = "cruise:main"
 
 [tool.setuptools]
-py-modules = ["main"]
+py-modules = ["cruise"]
