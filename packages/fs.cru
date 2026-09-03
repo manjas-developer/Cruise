@@ -1,0 +1,31 @@
+# fs.cru — Official File System Module for Cruise 📁⚡
+
+fn read(path):
+    return file_read(path)
+end
+
+fn write_data(path, content):
+    file_write(path, content)
+    return true
+end
+
+fn append_data(path, content):
+    let current_data = ""
+    if file_exists(path):
+        let current_data = file_read(path)
+    end
+    file_write(path, current_data + content)
+    return true
+end
+
+fn exists(path):
+    return file_exists(path)
+end
+
+fn remove(path):
+    return file_delete(path)
+end
+
+fn fs_info():
+    write("Cruise File System (fs) Module v1.0.0 Ready! 📁✨")
+end
