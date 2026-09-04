@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cruise-lang"
-version = "0.4.2"
+version = "0.4.3"
 authors = [
   { name = "Manjas Anand", email = "manjasanand08@gmail.com" }
 ]
-description = "Cruise: An AI-powered, tensor-ready lightweight programming language with AST parser, CPM package manager, and GUI framework."
+description = "Cruise: An AI-ready, lightweight programming language with native file system (fs), PyTorch tensors, AST parser, CPM, and GUI framework."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.8"
@@ -19,6 +19,7 @@ keywords = [
   "interpreter",
   "ast-parser",
   "pytorch-tensors",
+  "file-system",
   "cpm-package-manager",
   "deep-learning"
 ]
@@ -39,6 +40,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
